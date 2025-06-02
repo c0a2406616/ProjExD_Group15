@@ -17,12 +17,6 @@ BLOCK_WIDTH = 100     # ブロックの幅
 BLOCK_HEIGHT = 30     # ブロックの高さ
 BLOCK_PADDING = 5     # ブロック間の余白
 BLOCK_TOP_MARGIN = 30  # ブロック表示の上マージンを調整
-BLOCK_ROWS = 6        # ブロックの行数
-BLOCK_COLS = 10       # ブロックの列数
-BLOCK_WIDTH = 100     # ブロックの幅
-BLOCK_HEIGHT = 30     # ブロックの高さ
-BLOCK_PADDING = 5     # ブロック間の余白
-BLOCK_TOP_MARGIN = 30  # ブロック表示の上マージンを調整
 
 # 作業ディレクトリをスクリプトのある場所に変更
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -34,6 +28,7 @@ def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
     if obj_rct.top < 0 or HEIGHT < obj_rct.bottom:
         tate = False
     return yoko, tate
+
 
 class Background:
     def __init__(self, path="fig/0.png"):
@@ -137,6 +132,7 @@ class Ball:
             self.radius * 2, self.radius * 2
         )
 
+
 class Ringo:  #りんごのクラス
     def __init__(self,ap_x,ap_y,ap_rad):
         self.ap_x = ap_x
@@ -146,9 +142,7 @@ class Ringo:  #りんごのクラス
         #座標と半径、色
         
     def update(self):
-        
         self.ap_y += 2
-        
             
     def draw(self,screen):
         app_img = pg.image.load("fig/apple.png")
@@ -156,13 +150,13 @@ class Ringo:  #りんごのクラス
         screen.blit(app_img,(self.ap_x, int(self.ap_y)))
         
             
-
     def get_rect(self) -> pg.Rect:
         return pg.Rect(
             int(self.ap_x - self.ap_rad),
             int(self.ap_y - self.ap_rad),
             self.ap_rad * 2, self.ap_rad * 2
         )
+
 
 class Block:
     """
@@ -196,10 +190,42 @@ class HUD:
         screen.blit(hp_s, (10, 10))
         screen.blit(mp_s, (10, 40))
 
+
+class Penetration:
+    """
+    貫通機能を管理するクラス。
+
+    Attributes:
+        active (bool): 貫通中かどうかのフラグ。
+        cost (int): 発動に必要なMP。
+    """
+
+    def __init__(self, cost=5):
+        self.active = False
+        self.cost = cost
+        # 音声は初期化時に読み込んでおく
+        self.sound = pg.mixer.Sound("fig/貫通.mp3")
+
+    def try_activate(self, hud: HUD, ball: Ball):
+        """Enter キーが押されたときに，MPが足りていて貫通未発動なら発動する"""
+        if not self.active and hud.mp >= self.cost:
+            hud.mp -= self.cost
+            self.active = True
+            ball.color = (255, 255, 100)  # 貫通中の色に変更
+            self.sound.play()
+
+    def deactivate(self, ball: Ball):
+        """貫通を終了し，ボールの色を元に戻す"""
+        if self.active:
+            self.active = False
+            ball.color = (255, 100, 100)
+
+
 class Game:
     def __init__(self):
         pg.display.set_caption("ブロック崩し")
         self.break_sound = pg.mixer.Sound("fig/割れる.mp3")
+
         self.screen = pg.display.set_mode((WIDTH, HEIGHT))
         self.clock = pg.time.Clock()
         self.bg = Background()
@@ -212,10 +238,10 @@ class Game:
         self.game_over_font = pg.font.Font(None, 100)
         self.game_clear_font = pg.font.Font(None, 100) # 追加
 
+        self.penetration = Penetration(cost=5)  # 貫通クラスをインスタンス化
+
         # こうかとんに当たったときの爆発用のアニメーション
         self.explosion_img = pg.image.load("fig/explosion.gif").convert_alpha()
-
-        self.penetrate = False  # 貫通機能  # 貫通機能として追加
 
         # ブロックの全体幅を計算
         total_block_width = BLOCK_COLS * BLOCK_WIDTH + (BLOCK_COLS - 1) * BLOCK_PADDING
@@ -281,13 +307,9 @@ class Game:
         for e in pg.event.get():
             if e.type == pg.QUIT:
                 self.running = False
-        keys = pg.key.get_pressed()  # Enterキーで貫通開始  # 貫通機能として追加↓
-        if keys[pg.K_RETURN] and self.hud.mp >= 5 and not self.penetrate:
-            self.hud.mp -= 5
-            self.penetrate = True
-            self.ball.color = (255, 255, 100)  # 貫通中の色変化  # 貫通機能として追加↑
-            pg.mixer.init()
-            pg.mixer.Sound("fig/貫通.mp3").play()  # 貫通音
+        keys = pg.key.get_pressed()  # Enterキーで貫通開始
+        if keys[pg.K_RETURN]:
+            self.penetration.try_activate(self.hud, self.ball)
 
     def _update(self):
         keys = pg.key.get_pressed()
@@ -329,9 +351,7 @@ class Game:
 
         if self.ball.get_rect().colliderect(self.paddle.rect):  # バー衝突　
             self.ball.vel.y *= -1
-            if self.penetrate:  # 貫通機能として追加↓
-                self.penetrate = False  # バーに当たったら貫通解除
-                self.ball.color = (255, 100, 100)  # 貫通機能として追加↑
+            self.penetration.deactivate(self.ball)  # 貫通解除
         
         if self.app.get_rect().colliderect(self.paddle.rect):  # パドル（バー）とりんごの衝突判定
             if self.hud.hp < 3 :
@@ -342,9 +362,6 @@ class Game:
             self.app.ap_x = random.randint(100,2300)
             self.app.ap_y = -100
         
-            # if self.penetrate:  # 貫通機能として追加↓
-            #     self.penetrate = False  # バーに当たったら貫通解除
-            #     self.ball.color = (255, 100, 100)  # 貫通機能として追加↑
 
         # ブロック衝突
         ball_rct = self.ball.get_rect()
@@ -354,15 +371,16 @@ class Game:
             if ball_rct.colliderect(block.rect):  #ボールとブロックの衝突判定
                 block.alive = False  # ボールが消える
                 self.break_sound.play()  # 割れる音
-                # 貫通中でなければ反転  # 貫通機能として追加↓
-                if not self.penetrate:  # 貫通機能として追加↑
+                # 貫通中でなければ反転、貫通中なら反射せずそのまま貫通
+                if not self.penetration.active:
                     self.ball.vel.y *= -1
                 break
 
         # 画面下へ落ちたらHP減
         if self.ball.pos.y - self.ball.radius > HEIGHT:
             self.hud.hp -= 1
-            self.penetrate = False  # 貫通解除  # 貫通機能として追加
+            # 貫通解除
+            self.penetration.deactivate(self.ball)
             self.ball = Ball((self.paddle.rect.centerx, self.paddle.rect.top - 10))
             pg.time.delay(500)
             self.app.ap_y = -100
