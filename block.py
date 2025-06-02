@@ -319,7 +319,7 @@ class Game:
 
         #MP自動回復処理
         current_time = pg.time.get_ticks()
-        if current_time - self.hud.last_regen_time >= 10000:  #10秒おきに
+        if current_time - self.hud.last_regen_time >= 5000:  #5秒おきに
             self.hud.last_regen_time = current_time
             if self.hud.mp < 5:
                 self.hud.mp += 1  # 1回復する 
@@ -327,7 +327,7 @@ class Game:
         #こうかとんにボールが当たったら爆発&ゲームオーバー
         mx, my = self.paddle.rect.midbottom
         char_img = (self.paddle.char_img 
-                    if self.paddle.dir > 0 
+                    if self.paddle.dir > 0
                     else pg.transform.flip(self.paddle.char_img, True, False))
         char_rect = char_img.get_rect(midtop=(mx, my - 5))
         # 当たり判定を縮小（上下左右 10px 縮める例）
