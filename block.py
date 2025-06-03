@@ -223,7 +223,7 @@ class Penetration:
 
 class Game:
     def __init__(self):
-        pg.display.set_caption("ブロック崩し")
+        pg.display.set_caption("こうかとんのブロック崩し")
         self.break_sound = pg.mixer.Sound("fig/割れる.mp3")
 
         self.screen = pg.display.set_mode((WIDTH, HEIGHT))
