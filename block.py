@@ -6,19 +6,18 @@ import time
 import pygame as pg
 import pygame 
 
-# --- 定数定義 ---
-WIDTH = 1100   # 画面の幅
-HEIGHT = 650   # 画面の高さ
-FPS = 60       # フレームレート
-PADDLE_Y_OFFSET = 50  # 下からバーを上げる量
-BLOCK_ROWS = 6        # ブロックの行数
-BLOCK_COLS = 10       # ブロックの列数
-BLOCK_WIDTH = 100     # ブロックの幅
-BLOCK_HEIGHT = 30     # ブロックの高さ
-BLOCK_PADDING = 5     # ブロック間の余白
-BLOCK_TOP_MARGIN = 30  # ブロック表示の上マージンを調整
+WIDTH = 1100
+HEIGHT = 650
+FPS = 60
+PADDLE_Y_OFFSET = 50
+BLOCK_ROWS = 6
+BLOCK_COLS = 10
+BLOCK_WIDTH = 100
+BLOCK_HEIGHT = 30
+BLOCK_PADDING = 5
+BLOCK_TOP_MARGIN = 30
 
-# 作業ディレクトリをスクリプトのある場所に変更
+
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
@@ -41,7 +40,6 @@ class Background:
 
 class Paddle:
     def __init__(self, pos):
-        # バー画像の読み込み
         self.width = 130
         self.height = 15
         self.rect = pg.Rect(0, 0, self.width, self.height)
@@ -60,7 +58,7 @@ class Paddle:
 
         #加速モード
         self.speedup_sound = pg.mixer.Sound("fig/スピードアップ.mp3")
-        self.boosting = False
+        self.boosting = False  # ブースト状態かどうかを表す（最初はオフ）
         self.boost_start_time = 0
         self.boost_duration = 10000 #10秒
 
@@ -83,10 +81,10 @@ class Paddle:
         
         if keys[pg.K_LEFT] and self.rect.left > 0:
             self.rect.x -= self.speed
-            self.dir = 1  # 向きを左と記録
+            self.dir = 1  # 向きを左
         if keys[pg.K_RIGHT] and self.rect.right < WIDTH:
             self.rect.x += self.speed
-            self.dir = -1  #向きを右と記録
+            self.dir = -1  #向きを右
 
     def draw(self, screen):
         pg.draw.rect(screen, (0, 100, 255), self.rect, border_radius=self.rect.height // 2)
@@ -96,7 +94,7 @@ class Paddle:
         if self.dir < 0:
             char = pg.transform.flip(self.char_img, True, False)
         mx, my = self.rect.midbottom
-        char_rect = char.get_rect(midtop=(mx, my - 5))  # 5px 上にオフセット
+        char_rect = char.get_rect(midtop=(mx, my - 5))
         screen.blit(char, char_rect)
 
 
@@ -236,7 +234,7 @@ class Game:
         self.hud = HUD(self.font)
         self.running = True
         self.game_over_font = pg.font.Font(None, 100)
-        self.game_clear_font = pg.font.Font(None, 100) # 追加
+        self.game_clear_font = pg.font.Font(None, 100)
 
         self.penetration = Penetration(cost=5)  # 貫通クラスをインスタンス化
 
@@ -252,7 +250,7 @@ class Game:
             for col in range(BLOCK_COLS):
                 x = x_middle + col * (BLOCK_WIDTH + BLOCK_PADDING)
                 y = row * (BLOCK_HEIGHT + BLOCK_PADDING) + BLOCK_PADDING + BLOCK_TOP_MARGIN
-                color = (255, 0, 0)  # 常に赤
+                color = (255, 0, 0)
                 self.blocks.append(Block(x, y, color))
 
         # 隣接する赤いブロックを検出して出力
@@ -287,7 +285,7 @@ class Game:
                 self._draw_game_clear()      # クリア画面の描画
                 pg.display.flip()            # 表示を更新
                 pg.time.delay(3000)          # 3秒待機
-                self.running = False         # ループ終了
+                self.running = False
                 break
 
 
@@ -330,8 +328,8 @@ class Game:
                     if self.paddle.dir > 0
                     else pg.transform.flip(self.paddle.char_img, True, False))
         char_rect = char_img.get_rect(midtop=(mx, my - 5))
-        # 当たり判定を縮小（上下左右 10px 縮める例）
-        reduced_rect = char_rect.inflate(-20, -20)  # 幅・高さを小さくする
+        # 当たり判定を縮小
+        reduced_rect = char_rect.inflate(-20, -20)
 
         if self.ball.get_rect().colliderect(reduced_rect):
             #  爆発音
